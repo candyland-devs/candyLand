@@ -1,137 +1,154 @@
 import React, { useState, useEffect } from "react";
-import { Product } from "../../components/Catalog/CatalogCard/CatalogCard";
 import CatalogCard from "../../components/Catalog/CatalogCard/CatalogCard";
-import styles from "./CatalogPage.module.css";
+
+interface Producto {
+  id: number;
+  title: string;
+  price: string;
+  id_categoria: number;
+  unidad_medida: string;
+  peso: string;
+}
 
 const CatalogPage = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Todos");
-  const [minPrice, setMinPrice] = useState(0);
-  const [maxPrice, setMaxPrice] = useState(5000);
-  const [visibleProducts, setVisibleProducts] = useState(10); // Cantidad inicial
+  const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false); // loader scroll
+  const [error, setError] = useState<string | null>(null);
+  const [filtro, setFiltro] = useState("");
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<number | "todas">("todas");
 
-  const loadMore = () => {
-    if (loadingMore || visibleProducts >= filteredProducts.length) return;
-    setLoadingMore(true);
+  const API_URL = "http://localhost:3001/api/productos";
 
-    // Simula un delay como si pidiera más al backend
-    setTimeout(() => {
-      setVisibleProducts((prev) => prev + 10);
-      setLoadingMore(false);
-    }, 1500);
+  useEffect(() => {
+    fetchProductos();
+  }, []);
+
+  const fetchProductos = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log("🌐 Fetching desde:", API_URL);
+      
+      const response = await fetch(API_URL);
+      
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("📥 Datos recibidos:", data);
+      
+      setProductos(data);
+      
+    } catch (err) {
+      console.error("❌ Error:", err);
+      setError(err instanceof Error ? err.message : "Error al conectar");
+    } finally {
+      setLoading(false);
+    }
   };
 
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (
-        window.innerHeight + document.documentElement.scrollTop + 100 >=
-        document.documentElement.offsetHeight
-      ) {
-        loadMore();
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+  const productosFiltrados = productos.filter(p => {
+    const cumpleFiltro = p.title.toLowerCase().includes(filtro.toLowerCase());
+    const cumpleCategoria = categoriaSeleccionada === "todas" || 
+                           p.id_categoria === categoriaSeleccionada;
+    return cumpleFiltro && cumpleCategoria;
   });
 
- // ✅ Simular carga inicial de productos
-  useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setProducts([
-      { id: 1, title: "Caramelos Frutales", description: "Dulces tropicales suaves.", price: 1200, image: "/src/assets/img/dulce1.jpg", category: "Caramelos" },
-      { id: 2, title: "Gomitas Ácidas", description: "Con un toque ácido y suave.", price: 1500, image: "/src/assets/img/dulce2.jpg", category: "Gomitas" },
-      { id: 3, title: "Chocolates", description: "Chocolate con leche cremoso.", price: 2000, image: "/src/assets/img/dulce3.jpg", category: "Chocolate" },
-      { id: 4, title: "Alfajores", description: "Clásicos con dulce de leche.", price: 1800, image: "/src/assets/img/dulce4.jpg", category: "Alfajores" },
-      { id: 5, title: "Bombones", description: "Bombones rellenos variados.", price: 2500, image: "/src/assets/img/dulce5.jpg", category: "Chocolate" },
-      { id: 6, title: "Chicles", description: "Sabor a frutas explosivas.", price: 800, image: "/src/assets/img/dulce6.jpg", category: "Chicles" },
-      { id: 7, title: "Malvaviscos", description: "Esponjosos y deliciosos.", price: 900, image: "/src/assets/img/chocolate1.jpg", category: "Golosinas" },
-      { id: 8, title: "Paletas", description: "Paletas de caramelo clásicas.", price: 700, image: "/src/assets/img/caramelos3.jpg", category: "Caramelos" },
-      { id: 9, title: "Turrón de Maní", description: "Turrón suave con maní.", price: 1300, image: "/src/assets/img/golosina1.jpg", category: "Turrón" },
-      { id: 10, title: "Dulce de Leche", description: "Dulce tradicional argentino.", price: 1600, image: "/src/assets/img/golosina2.jpg", category: "Postres" },
-      { id: 11, title: "Confites", description: "Confites de colores festivos.", price: 1100, image: "/src/assets/img/golosina3.jpg", category: "Caramelos" },
-      { id: 12, title: "Galletitas", description: "Galletas dulces crocantes.", price: 1000, image: "/src/assets/img/golosina4.jpg", category: "Galletas" },
-      { id: 13, title: "Barritas de Cereal", description: "Con chocolate y avena.", price: 1400, image: "/src/assets/img/golosina5.jpg", category: "Snacks" },
-      { id: 14, title: "Praliné de Maní", description: "Maní acaramelado crocante.", price: 900, image: "/src/assets/img/golosina6.jpg", category: "Snacks" },
-      { id: 15, title: "Rellenitas", description: "Galletas rellenas de dulce.", price: 1200, image: "/src/assets/img/gomitas2.jpg", category: "Galletas" },
-      { id: 16, title: "Ositos de Gomita", description: "Gomitas suaves de colores.", price: 1500, image: "/src/assets/img/destacado-golosina1.jpg", category: "Gomitas" },
-      { id: 17, title: "Mentitas", description: "Refrescantes caramelos de menta.", price: 700, image: "/src/assets/img/tutorial2.jpg", category: "Caramelos" },
-      { id: 18, title: "Dragees", description: "Chocolate cubierto de colores.", price: 1700, image: "/src/assets/img/destacado-golosina2.jpg", category: "Chocolate" },
-      { id: 19, title: "Caramelos Masticables", description: "Suaves y frutales.", price: 900, image: "/src/assets/img/dulzura-central.jpg", category: "Caramelos" },
-      { id: 20, title: "Rocklets", description: "Chocolates con grageas.", price: 1800, image: "/src/assets/img/tutorial5.jpg", category: "Chocolate" },
-    ]);
-      setLoading(false);
-    }, 2000);
-  }, []);
-  
-  // Filtrado desde frontend
-  const filteredProducts = products.filter((product) => {
+  const categoriasIds = ["todas", ...new Set(productos.map(p => p.id_categoria))];
+
+  if (loading) {
     return (
-      product.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (selectedCategory === "Todos" || product.category === selectedCategory) &&
-      product.price >= minPrice &&
-      product.price <= maxPrice
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin text-6xl mb-4">🍭</div>
+          <p className="text-xl text-gray-600 font-semibold">Cargando dulces...</p>
+        </div>
+      </div>
     );
-  });
-
-  // Obtener categorías únicas
-  const categories = ["Todos", ...new Set(products.map((p) => p.category))];
+  }
 
   return (
-    <div className={styles.catalogContainer}>
-      <aside className={styles.filters}>
-        <h3>Filtros</h3>
-        
-        {/* Buscador */}
-        <input
-          type="text"
-          placeholder="Buscar producto..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold text-pink-600 mb-2">
+            🍭 Sweet Market - Catálogo
+          </h1>
+          <p className="text-gray-600 text-lg">
+            {productos.length} productos disponibles
+          </p>
+        </div>
 
-        {/* Categorías */}
-        <select onChange={(e) => setSelectedCategory(e.target.value)} value={selectedCategory}>
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
+        {/* Error */}
+        {error && (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded mb-6">
+            <p className="font-bold">⚠️ Error: {error}</p>
+            <p className="text-sm mt-1">Verifica que el backend esté corriendo en {API_URL}</p>
+            <button 
+              onClick={fetchProductos}
+              className="mt-2 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
+            >
+              🔄 Reintentar
+            </button>
+          </div>
+        )}
 
-        {/* Precio mínimo */}
-        <label>Precio mínimo: </label>
-        <input type="number" value={minPrice} onChange={(e) => setMinPrice(Number(e.target.value))} />
+        {/* Filtros */}
+        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <input
+              type="text"
+              placeholder="🔍 Buscar productos..."
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value)}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+            />
+            
+            <select
+              value={categoriaSeleccionada}
+              onChange={(e) => setCategoriaSeleccionada(
+                e.target.value === "todas" ? "todas" : Number(e.target.value)
+              )}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+            >
+              {categoriasIds.map(cat => (
+                <option key={cat} value={cat}>
+                  {cat === "todas" ? "📂 Todas las categorías" : `Categoría ${cat}`}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="mt-3 text-sm text-gray-600">
+            Mostrando {productosFiltrados.length} de {productos.length} productos
+          </div>
+        </div>
 
-        {/* Precio máximo */}
-        <label>Precio máximo: </label>
-        <input type="number" value={maxPrice} onChange={(e) => setMaxPrice(Number(e.target.value))} />
-      </aside>
-
-      {/* Productos */}
-          <section className={styles.catalogGrid}>
-        {loading ? (
-          <p className={styles.loader}>Cargando productos...</p>
+        {/* Grid de productos */}
+        {productosFiltrados.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-lg shadow-md">
+            <p className="text-6xl mb-4">🔍</p>
+            <p className="text-xl text-gray-600 font-semibold mb-2">
+              No se encontraron productos
+            </p>
+            <p className="text-gray-500">
+              Intenta con otro término de búsqueda o categoría
+            </p>
+          </div>
         ) : (
-          filteredProducts.slice(0, visibleProducts).map((product) => (
-            <CatalogCard key={product.id} product={product} />
-          ))
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {productosFiltrados.map(producto => (
+              <CatalogCard 
+                key={producto.id} 
+                producto={producto}
+              />
+            ))}
+          </div>
         )}
-
-        {/* Loader al cargar más en scroll */}
-        {loadingMore && !loading && (
-          <p className={styles.loadingMore}>Cargando más productos...</p>
-        )}
-
-        {/* Mensaje si ya no hay más */}
-        {!loadingMore && visibleProducts >= filteredProducts.length && (
-          <p className={styles.endMessage}>No hay más productos para mostrar 😊</p>
-        )}
-      </section>
-
+      </div>
     </div>
   );
 };
